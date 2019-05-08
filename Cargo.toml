@@ -1,18 +1,14 @@
-# cargo
-
-# [[file:~/Workspace/Programming/gosh/nebrun/neb.note::*cargo][cargo:1]]
 [package]
 name = "neb"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2018"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 
 [dependencies]
 quicli = "0.4"
 structopt = "0.2"
-#gosh = {git = "https://github.com/gosh-rs/gosh.git", tag="v0.0.17"}
-gosh = {path = "/home/ybyygu/Workspace/Programming/gosh"}
+fire = {git = "https://github.com/gosh-rs/fire.git", tag="v0.0.4"}
+gosh = {git = "https://github.com/gosh-rs/gosh.git", tag="v0.0.19"}
 
 [dev-dependencies]
 approx = "0.3"
-# cargo:1 ends here

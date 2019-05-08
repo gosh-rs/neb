@@ -1,5 +1,12 @@
 // [[file:~/Workspace/Programming/gosh/nebrun/neb.note::*header][header:2]]
-//! <<neb-doc-mod>>
+//! Implementation of the Nudged Elastic Band (NEB) method for finding minimum energy paths and saddle points
+//! 
+//! References
+//! ----------
+//! * Henkelman, G. et al J. Chem. Phys. 2000, 113 (22), 9978–9985.
+//! * Henkelman, G. et al J. Chem. Phys. 2000, 113 (22), 9901–9904.
+//! * Kolsbjerg et al J. Chem. Phys. 2016, 145 (9), 094107.
+//! * https://github.com/siesta-project/flos/blob/master/flos/special/neb.lua
 // header:2 ends here
 
 // imports
@@ -253,9 +260,9 @@ fn tangent_vectors_elastic_band(images: &Vec<Molecule>) -> Result<Vec<Vector3fVe
 }
 // elastic band:1 ends here
 
-// entry
+// core
 
-// [[file:~/Workspace/Programming/gosh/nebrun/neb.note::*entry][entry:1]]
+// [[file:~/Workspace/Programming/gosh/nebrun/neb.note::*core][core:1]]
 impl NEB {
     /// calculate real energy and forces
     fn calculate<T: ChemicalModel>(&mut self, model: &T) -> Result<()> {
@@ -306,6 +313,7 @@ impl NEB {
         // 1. calculate image tangent vectors to NEB path
         // let tangents = tangent_vectors_original(&displacements)?;
         let tangents = tangent_vectors_improved(&displacements, &energies)?;
+        dbg!(&tangents);
 
         // 2. the parallel part from spring forces
         let forces1 = spring_forces_parallel(&displacements, &self.spring_constants, &tangents);
@@ -473,7 +481,7 @@ fn forces_mat_to_vec(arr_forces_mat: &[Vector3fVec]) -> Vec<Point3D> {
 
     forces
 }
-// entry:1 ends here
+// core:1 ends here
 
 // opt
 
@@ -523,11 +531,12 @@ impl NEB {
         // optimization loop
         let mut fire = FIRE::default();
 
-        for i in 0..200 {
+        for i in 0..1 {
             // 1. real calculation
             self.calculate(model)?;
             let arr_forces = self.neb_forces()?;
             let forces = forces_mat_to_vec(&arr_forces);
+            println!("{:?}", forces);
             let mut mp = ModelProperties::default();
             mp.forces = Some(forces);
             mp.energy = self.neb_energy();
@@ -557,3 +566,37 @@ impl NEB {
     }
 }
 // opt:1 ends here
+
+// test
+
+// [[file:~/Workspace/Programming/gosh/nebrun/neb.note::*test][test:1]]
+#[test]
+fn test_neb_opt() -> Result<()>{
+    use gosh::gchemol;
+    use gosh::gchemol::Molecule;
+    use gosh::models::BlackBox;
+
+    // load images
+    let filename = "/home/ybyygu/Workspace/Programming/structure-predication/reaction-explore/tests/files/C5HT/rx-lst5.xyz";
+    let mut images = gchemol::io::read(filename).expect("neb test file");
+    let nimages = images.len();
+    println!("Loaded {:} images", nimages);
+
+    // setup NEB
+    let mut neb = NEB::new(images);
+    let bbm = BlackBox::from_dir("/share/apps/mopac/sp");
+
+    // run it
+    neb.run(&bbm)?;
+
+    // output
+    let mut mols = vec![];
+    for image in neb.images {
+        mols.push(image.mol.clone());
+    }
+
+    gchemol::io::write("/tmp/aa.xyz", &mols)?;
+
+    Ok(())
+}
+// test:1 ends here
